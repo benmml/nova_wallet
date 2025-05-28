@@ -2,11 +2,11 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
 // Set the DEX launch date (UTC)
-const launchDate = new Date('2025-07-01T00:00:00Z');
-// Set Pulse token price in USD
-const PULSE_USDT_PRICE = 0.1;
-const PULSE_BTC_PRICE = "0.00000155"; // example (0.1/64500)
-const PULSE_ETH_PRICE = "0.000032";   // example (0.1/3150)
+const launchDate = new Date('2025-07-07T00:00:00Z');
+// Set Nova token price in USD (was Pulse)
+const NOVA_USDT_PRICE = 0.1;
+const NOVA_BTC_PRICE = "0.00000155"; // example (0.1/64500)
+const NOVA_ETH_PRICE = "0.000032";   // example (0.1/3150)
 
 function getTimeRemaining(endTime) {
   const total = endTime - new Date();
@@ -19,7 +19,7 @@ function getTimeRemaining(endTime) {
 
 export default function DexComingSoon() {
   const [timeLeft, setTimeLeft] = useState(getTimeRemaining(launchDate));
-  const [corePrice, setCorePrice] = useState(null);
+  const [bnbPrice, setBnbPrice] = useState(null);
 
   useEffect(() => {
     const timer = setInterval(() => setTimeLeft(getTimeRemaining(launchDate)), 1000);
@@ -27,39 +27,39 @@ export default function DexComingSoon() {
   }, []);
 
   useEffect(() => {
-    // Fetch real CORE price from CoinGecko
-    async function fetchCorePrice() {
+    // Fetch BNB price from CoinGecko
+    async function fetchBnbPrice() {
       try {
         const resp = await axios.get(
-          "https://api.coingecko.com/api/v3/simple/price?ids=coredaoorg&vs_currencies=usd"
+          "https://api.coingecko.com/api/v3/simple/price?ids=binancecoin&vs_currencies=usd"
         );
-        setCorePrice(resp.data?.coredaoorg?.usd || 0);
+        setBnbPrice(resp.data?.binancecoin?.usd || 0);
       } catch {
-        setCorePrice(0);
+        setBnbPrice(0);
       }
     }
-    fetchCorePrice();
+    fetchBnbPrice();
     // Optionally, refresh every 60 seconds
-    const ref = setInterval(fetchCorePrice, 60000);
+    const ref = setInterval(fetchBnbPrice, 60000);
     return () => clearInterval(ref);
   }, []);
 
   // If price is loading, show placeholder
-  const coreUsdtPriceStr = corePrice === null ? "..." : Number(corePrice).toFixed(4);
+  const bnbUsdtPriceStr = bnbPrice === null ? "..." : Number(bnbPrice).toFixed(4);
 
-  // Compute PULSE/CORE based on real price
-  const pulseCorePriceStr =
-    corePrice && corePrice > 0
-      ? (PULSE_USDT_PRICE / corePrice).toFixed(6)
+  // Compute NOVA/BNB based on real price
+  const novaBnbPriceStr =
+    bnbPrice && bnbPrice > 0
+      ? (NOVA_USDT_PRICE / bnbPrice).toFixed(6)
       : "...";
 
   // DEX pairs and prices
   const fakePairs = [
-    { pair: "CORE/USDT", price: coreUsdtPriceStr, change: "+0.9%" },
-    { pair: "PULSE/CORE", price: pulseCorePriceStr, change: "+0.0%" },
-    { pair: "PULSE/USDT", price: PULSE_USDT_PRICE.toFixed(4), change: "+0.0%" },
-    { pair: "PULSE/BTC", price: PULSE_BTC_PRICE, change: "+0.0%" },
-    { pair: "PULSE/ETH", price: PULSE_ETH_PRICE, change: "+0.0%" },
+    { pair: "BNB/USDT", price: bnbUsdtPriceStr, change: "+0.9%" },
+    { pair: "NOVA/BNB", price: novaBnbPriceStr, change: "+0.0%" },
+    { pair: "NOVA/USDT", price: NOVA_USDT_PRICE.toFixed(4), change: "+0.0%" },
+    { pair: "NOVA/BTC", price: NOVA_BTC_PRICE, change: "+0.0%" },
+    { pair: "NOVA/ETH", price: NOVA_ETH_PRICE, change: "+0.0%" },
   ];
 
   return (
@@ -99,7 +99,7 @@ export default function DexComingSoon() {
       <div className="relative z-10 w-full flex flex-col items-center py-6 px-4">
         <h1 className="text-2xl md:text-3xl font-extrabold text-accent drop-shadow mb-2 text-center tracking-tight">
           <span className="inline-block align-middle mr-2">🔄</span>
-          PulseZone DEX Launch
+          NovaZone DEX Launch
         </h1>
         <div className="w-full flex flex-col items-center mb-4">
           <div className="flex space-x-3 text-2xl md:text-3xl font-mono font-bold text-accent drop-shadow-lg my-2">
@@ -130,7 +130,7 @@ export default function DexComingSoon() {
           </span>
         </div>
         <div className="rounded bg-accent/10 border border-accent px-4 py-2 mt-2 text-accent text-sm font-medium text-center max-w-lg">
-          Trading of <span className="font-bold">Pulse token</span> will begin as soon as the DEX opens.
+          Trading of <span className="font-bold">Nova token</span> will begin as soon as the DEX opens.
         </div>
       </div>
       {/* Fake DEX Table */}

@@ -4,10 +4,10 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 import QRCode from 'qrcode.react';
 
-const CORESCAN_TX_BASE = "https://scan.coredao.org/tx/";
+const BSCSCAN_TX_BASE = "https://bscscan.com/tx/";
 
-const BalanceSection = ({ coreBalance, wallet, transactions }) => {
-  const [corePrice, setCorePrice] = useState(0);
+const BalanceSection = ({ bnbBalance, wallet, transactions }) => {
+  const [bnbPrice, setBnbPrice] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [showSendModal, setShowSendModal] = useState(false);
   const [showReceiveModal, setShowReceiveModal] = useState(false);
@@ -17,18 +17,18 @@ const BalanceSection = ({ coreBalance, wallet, transactions }) => {
   const [successData, setSuccessData] = useState(null);
 
   useEffect(() => {
-    // Fetch CORE price from Coingecko
-    const fetchCorePrice = async () => {
+    // Fetch BNB price from Coingecko
+    const fetchBnbPrice = async () => {
       try {
         const resp = await axios.get(
-          "https://api.coingecko.com/api/v3/simple/price?ids=coredaoorg&vs_currencies=usd"
+          "https://api.coingecko.com/api/v3/simple/price?ids=binancecoin&vs_currencies=usd"
         );
-        setCorePrice(resp.data?.coredaoorg?.usd || 0);
+        setBnbPrice(resp.data?.binancecoin?.usd || 0);
       } catch {
-        setCorePrice(0);
+        setBnbPrice(0);
       }
     };
-    fetchCorePrice();
+    fetchBnbPrice();
   }, []);
 
   const handleSend = () => {
@@ -43,11 +43,11 @@ const BalanceSection = ({ coreBalance, wallet, transactions }) => {
         throw new Error('Invalid address');
       }
       const amountWei = ethers.parseEther(sendAmount);
-      const provider = new ethers.JsonRpcProvider('https://rpc.coredao.org');
+      const provider = new ethers.JsonRpcProvider('https://bsc-dataseed.binance.org/');
       const signer = new ethers.Wallet(wallet.privateKey, provider);
       const balanceWei = await provider.getBalance(wallet.address);
       if (balanceWei < amountWei) {
-        throw new Error('Insufficient CORE balance');
+        throw new Error('Insufficient BNB balance');
       }
       const feeData = await provider.getFeeData();
       const gasLimit = 21000n;
@@ -68,13 +68,13 @@ const BalanceSection = ({ coreBalance, wallet, transactions }) => {
         from: wallet.address,
         to: sendAddress,
         amount: sendAmount,
-        symbol: "CORE",
+        symbol: "BNB",
       });
       setShowSuccess(true);
-      toast.success(`Sent ${sendAmount} CORE!`);
+      toast.success(`Sent ${sendAmount} BNB!`);
     } catch (error) {
       console.error('Send error:', error);
-      toast.error(error.message || 'Failed to send CORE');
+      toast.error(error.message || 'Failed to send BNB');
     }
     setIsLoading(false);
   };
@@ -89,10 +89,10 @@ const BalanceSection = ({ coreBalance, wallet, transactions }) => {
   };
 
   // Show proper formatting for price and balances
-  const formattedCore = coreBalance ? Number(coreBalance).toFixed(4) : "0.0000";
+  const formattedBnb = bnbBalance ? Number(bnbBalance).toFixed(4) : "0.0000";
   const formattedTotalUSD =
-    corePrice && coreBalance
-      ? (Number(coreBalance) * Number(corePrice)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    bnbPrice && bnbBalance
+      ? (Number(bnbBalance) * Number(bnbPrice)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
       : "0.00";
 
   return (
@@ -104,7 +104,7 @@ const BalanceSection = ({ coreBalance, wallet, transactions }) => {
             Total Balance: <span className="text-accent">${formattedTotalUSD}</span>
           </p>
           <p className="text-text">
-            CORE: {formattedCore}
+            BNB: {formattedBnb}
           </p>
         </div>
         <div className="flex space-x-4 mt-4 md:mt-0">
@@ -127,7 +127,7 @@ const BalanceSection = ({ coreBalance, wallet, transactions }) => {
       {showSendModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-secondary p-6 rounded-lg shadow-lg w-full max-w-md">
-            <h3 className="text-accent text-xl font-bold mb-4">Send CORE</h3>
+            <h3 className="text-accent text-xl font-bold mb-4">Send BNB</h3>
             <div className="mb-4">
               <label className="block text-text mb-2">Recipient Address</label>
               <input
@@ -140,7 +140,7 @@ const BalanceSection = ({ coreBalance, wallet, transactions }) => {
               />
             </div>
             <div className="mb-4">
-              <label className="block text-text mb-2">Amount (CORE)</label>
+              <label className="block text-text mb-2">Amount (BNB)</label>
               <input
                 type="number"
                 className="w-full p-2.5 bg-text text-primary rounded-md"
@@ -178,7 +178,7 @@ const BalanceSection = ({ coreBalance, wallet, transactions }) => {
       {showReceiveModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-secondary p-6 rounded-lg shadow-lg text-center w-full max-w-md">
-            <h3 className="text-accent text-xl font-bold mb-4">Receive CORE</h3>
+            <h3 className="text-accent text-xl font-bold mb-4">Receive BNB</h3>
             <div className="bg-white p-4 rounded-md inline-block">
               <QRCode value={wallet.address} size={200} />
             </div>
@@ -228,12 +228,12 @@ const BalanceSection = ({ coreBalance, wallet, transactions }) => {
               <span className="font-bold text-text">Amount:</span> {successData.amount}
             </div>
             <a
-              href={CORESCAN_TX_BASE + successData.hash}
+              href={BSCSCAN_TX_BASE + successData.hash}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-block bg-accent text-primary px-4 py-2 rounded hover:bg-accent-dark mt-4"
             >
-              View on Scan
+              View on BscScan
             </a>
             <div className="mt-4">
               <button

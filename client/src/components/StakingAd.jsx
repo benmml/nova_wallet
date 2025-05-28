@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ethers } from 'ethers';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
-import { CORE_RPC_URL, PULSE_CONTRACT_ADDRESS, PULSE_ABI, TOKEN_ADDRESSES } from '../config';
+import { BSC_RPC_URL, NOVA_CONTRACT_ADDRESS, NOVA_ABI, TOKEN_ADDRESSES } from '../config';
 
 const ERC20_ABI = [
   "function approve(address spender, uint256 value) external returns (bool)",
@@ -13,7 +13,7 @@ const ERC20_ABI = [
 const StakingAd = ({ wallet }) => {
   const [showForm, setShowForm] = useState(false);
   const [amount, setAmount] = useState('');
-  const [token, setToken] = useState('CORE'); // Default to CORE
+  const [token, setToken] = useState('BNB'); // Default to BNB
   const [isLoading, setIsLoading] = useState(false);
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const [successInfo, setSuccessInfo] = useState({ amount: '', token: '' });
@@ -24,12 +24,12 @@ const StakingAd = ({ wallet }) => {
     if (isLoading) return;
     setIsLoading(true);
     try {
-      const provider = new ethers.JsonRpcProvider(CORE_RPC_URL);
+      const provider = new ethers.JsonRpcProvider(BSC_RPC_URL);
       const signer = new ethers.Wallet(wallet.privateKey, provider);
-      const contract = new ethers.Contract(PULSE_CONTRACT_ADDRESS, PULSE_ABI, signer);
+      const contract = new ethers.Contract(NOVA_CONTRACT_ADDRESS, NOVA_ABI, signer);
 
       const feeData = await provider.getFeeData();
-      if (token === 'CORE') {
+      if (token === 'BNB') {
         const amountWei = ethers.parseEther(amount);
         const tx = await contract.stakeCore({
           value: amountWei,
@@ -38,14 +38,15 @@ const StakingAd = ({ wallet }) => {
           maxPriorityFeePerGas: feeData.maxPriorityFeePerGas,
         });
         const receipt = await tx.wait();
-        toast.success(`Staked ${amount} CORE! Hash: ${receipt.hash}`);
-        setSuccessInfo({ amount, token: 'CORE' });
+        toast.success(`Staked ${amount} BNB! Hash: ${receipt.hash}`);
+        setSuccessInfo({ amount, token: 'BNB' });
         setShowSuccessPopup(true);
       } else if (token === 'USDT') {
         const tokenAddress = TOKEN_ADDRESSES[token];
         const tokenContract = new ethers.Contract(tokenAddress, ERC20_ABI, signer);
 
-        const amountWei = ethers.parseUnits(amount, 6);
+        // USDT typically has 18 decimals on BSC, but you may need to adjust to 6 if your contract expects it.
+        const amountWei = ethers.parseUnits(amount, 18);
 
         // Optional: check USDT balance
         const balanceWei = await tokenContract.balanceOf(wallet.address);
@@ -54,9 +55,9 @@ const StakingAd = ({ wallet }) => {
         }
 
         // Approve USDT for staking
-        const allowance = await tokenContract.allowance(wallet.address, PULSE_CONTRACT_ADDRESS);
+        const allowance = await tokenContract.allowance(wallet.address, NOVA_CONTRACT_ADDRESS);
         if (allowance < amountWei) {
-          const approveTx = await tokenContract.approve(PULSE_CONTRACT_ADDRESS, amountWei);
+          const approveTx = await tokenContract.approve(NOVA_CONTRACT_ADDRESS, amountWei);
           await approveTx.wait();
           toast.info(`Approved ${amount} USDT for staking`);
         }
@@ -136,7 +137,7 @@ const StakingAd = ({ wallet }) => {
               onChange={(e) => setToken(e.target.value)}
               disabled={isLoading}
             >
-              <option value="CORE">CORE</option>
+              <option value="BNB">BNB</option>
               <option value="USDT">USDT</option>
             </select>
           </div>

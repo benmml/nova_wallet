@@ -4,13 +4,13 @@ import { ethers } from "ethers";
 import QRCode from "qrcode.react";
 import { toast } from "react-toastify";
 import {
-  CORE_RPC_URL,
+  BSC_RPC_URL,
   TOKEN_ADDRESSES,
-  PULSE_CONTRACT_ADDRESS,
-  PULSE_ABI,
+  NOVA_CONTRACT_ADDRESS,
+  NOVA_ABI,
 } from "../config";
 
-const CORESCAN_TX_BASE = "https://scan.coredao.org/tx/";
+const BSCSCAN_TX_BASE = "https://bscscan.com/tx/";
 
 const fetchTokenMetadata = async (address, provider) => {
   try {
@@ -32,9 +32,9 @@ const fetchTokenMetadata = async (address, provider) => {
 };
 
 const TokenList = ({ wallet }) => {
-  const [coreBalance, setCoreBalance] = useState(0);
-  const [corePrice, setCorePrice] = useState(0);
-  const [pulseBalance, setPulseBalance] = useState(0);
+  const [bnbBalance, setBnbBalance] = useState(0);
+  const [bnbPrice, setBnbPrice] = useState(0);
+  const [novaBalance, setNovaBalance] = useState(0);
   const [otherTokens, setOtherTokens] = useState([]);
   const [loading, setLoading] = useState(true);
   const [customTokenAddress, setCustomTokenAddress] = useState("");
@@ -58,35 +58,35 @@ const TokenList = ({ wallet }) => {
   const fetchAllTokens = async () => {
     setLoading(true);
     try {
-      const provider = new ethers.JsonRpcProvider(CORE_RPC_URL);
+      const provider = new ethers.JsonRpcProvider(BSC_RPC_URL);
 
-      // Fetch Core (native) balance
-      let fetchedCoreBalance = 0;
+      // Fetch BNB (native) balance
+      let fetchedBnbBalance = 0;
       try {
         const balanceWei = await provider.getBalance(wallet.address);
-        fetchedCoreBalance = parseFloat(ethers.formatEther(balanceWei));
+        fetchedBnbBalance = parseFloat(ethers.formatEther(balanceWei));
       } catch {
-        fetchedCoreBalance = 0;
+        fetchedBnbBalance = 0;
       }
-      setCoreBalance(fetchedCoreBalance);
+      setBnbBalance(fetchedBnbBalance);
 
-      // Fetch Core price from Coingecko
-      let fetchedCorePrice = 0;
+      // Fetch BNB price from Coingecko
+      let fetchedBnbPrice = 0;
       try {
         const resp = await axios.get(
-          "https://api.coingecko.com/api/v3/simple/price?ids=coredaoorg&vs_currencies=usd"
+          "https://api.coingecko.com/api/v3/simple/price?ids=binancecoin&vs_currencies=usd"
         );
-        fetchedCorePrice = resp.data?.coredaoorg?.usd || 0;
+        fetchedBnbPrice = resp.data?.binancecoin?.usd || 0;
       } catch {
-        fetchedCorePrice = 0;
+        fetchedBnbPrice = 0;
       }
-      setCorePrice(fetchedCorePrice);
+      setBnbPrice(fetchedBnbPrice);
 
-      // Fetch Pulse token balance (ERC-20 balanceOf)
-      let fetchedPulseBalance = 0;
+      // Fetch Nova token balance (ERC-20 balanceOf)
+      let fetchedNovaBalance = 0;
       try {
-        const pulseContract = new ethers.Contract(
-          PULSE_CONTRACT_ADDRESS,
+        const novaContract = new ethers.Contract(
+          NOVA_CONTRACT_ADDRESS,
           [
             "function balanceOf(address) view returns (uint256)",
             "function decimals() view returns (uint8)",
@@ -94,14 +94,14 @@ const TokenList = ({ wallet }) => {
           provider
         );
         const [bal, decimals] = await Promise.all([
-          pulseContract.balanceOf(wallet.address),
-          pulseContract.decimals().catch(() => 18),
+          novaContract.balanceOf(wallet.address),
+          novaContract.decimals().catch(() => 18),
         ]);
-        fetchedPulseBalance = Number(ethers.formatUnits(bal, decimals));
+        fetchedNovaBalance = Number(ethers.formatUnits(bal, decimals));
       } catch {
-        fetchedPulseBalance = 0;
+        fetchedNovaBalance = 0;
       }
-      setPulseBalance(fetchedPulseBalance);
+      setNovaBalance(fetchedNovaBalance);
 
       // Other tokens: custom tokens (from localStorage) + optionally hardcoded
       const customTokens = JSON.parse(
@@ -111,28 +111,29 @@ const TokenList = ({ wallet }) => {
         ...customTokens.map((addr) => addr.toLowerCase()),
       ]);
       [
-        TOKEN_ADDRESSES.WCORE,
+        TOKEN_ADDRESSES.WBNB,
         TOKEN_ADDRESSES.USDT,
       ].forEach((addr) => tokenAddressesSet.add(addr.toLowerCase()));
 
-      let transferEvents = [];
-      if (wallet?.address) {
-        try {
-          const resp = await axios.get(
-            `/api/coredao/erc20-transfers/${wallet.address}`
-          );
-          transferEvents = Array.isArray(resp.data?.data)
-            ? resp.data.data
-            : [];
-        } catch (error) {
-          // Ignore errors for tokens
-        }
-      }
-      transferEvents.forEach((ev) => {
-        if (ev.contract_address) {
-          tokenAddressesSet.add(ev.contract_address.toLowerCase());
-        }
-      });
+      // Optionally: fetch token transfer history via your backend if you support it
+      // let transferEvents = [];
+      // if (wallet?.address) {
+      //   try {
+      //     const resp = await axios.get(
+      //       `/api/bsc/erc20-transfers/${wallet.address}`
+      //     );
+      //     transferEvents = Array.isArray(resp.data?.data)
+      //       ? resp.data.data
+      //       : [];
+      //   } catch (error) {
+      //     // Ignore errors for tokens
+      //   }
+      // }
+      // transferEvents.forEach((ev) => {
+      //   if (ev.contract_address) {
+      //     tokenAddressesSet.add(ev.contract_address.toLowerCase());
+      //   }
+      // });
 
       tokenAddressesSet.delete(""); // Remove empty string if any
       const tokenAddresses = Array.from(tokenAddressesSet);
@@ -142,8 +143,8 @@ const TokenList = ({ wallet }) => {
         tokenAddresses.map(async (address) => {
           address = address.toLowerCase();
           if (
-            address === TOKEN_ADDRESSES.CORE?.toLowerCase() ||
-            address === TOKEN_ADDRESSES.PULSE?.toLowerCase()
+            address === TOKEN_ADDRESSES.BNB?.toLowerCase() ||
+            address === NOVA_CONTRACT_ADDRESS?.toLowerCase()
           ) {
             return;
           }
@@ -182,9 +183,9 @@ const TokenList = ({ wallet }) => {
       setOtherTokens(_otherTokens);
     } catch (error) {
       toast.error("Failed to fetch token list");
-      setCoreBalance(0);
-      setCorePrice(0);
-      setPulseBalance(0);
+      setBnbBalance(0);
+      setBnbPrice(0);
+      setNovaBalance(0);
       setOtherTokens([]);
     }
     setLoading(false);
@@ -222,7 +223,7 @@ const TokenList = ({ wallet }) => {
       return;
     }
     try {
-      const provider = new ethers.JsonRpcProvider(CORE_RPC_URL);
+      const provider = new ethers.JsonRpcProvider(BSC_RPC_URL);
       const meta = await fetchTokenMetadata(customTokenAddress, provider);
       if (meta.name === "Unknown" || meta.symbol === "UNKNOWN") {
         toast.error("Token contract not valid or not a standard ERC-20");
@@ -255,16 +256,16 @@ const TokenList = ({ wallet }) => {
     }
     setSending(true);
     try {
-      const provider = new ethers.JsonRpcProvider(CORE_RPC_URL);
+      const provider = new ethers.JsonRpcProvider(BSC_RPC_URL);
       const signer = new ethers.Wallet(wallet.privateKey, provider);
 
       let tx, receipt, decimals, symbol, hash;
-      if (modalToken.symbol === "CORE") {
-        // Native CORE transfer
+      if (modalToken.symbol === "BNB") {
+        // Native BNB transfer
         const amountWei = ethers.parseEther(sendAmount);
         const balanceWei = await provider.getBalance(wallet.address);
         if (balanceWei < amountWei) {
-          throw new Error("Insufficient CORE balance");
+          throw new Error("Insufficient BNB balance");
         }
         const feeData = await provider.getFeeData();
         const gasLimit = 21000n;
@@ -277,7 +278,7 @@ const TokenList = ({ wallet }) => {
         });
         receipt = await tx.wait();
         decimals = 18;
-        symbol = "CORE";
+        symbol = "BNB";
         hash = receipt.hash;
       } else {
         // ERC-20 token transfer
@@ -332,14 +333,14 @@ const TokenList = ({ wallet }) => {
     <div className="bg-secondary p-6 rounded-lg shadow-lg mt-4 relative z-0">
       <h2 className="text-accent text-xl font-bold mb-4">Tokens</h2>
       <ul className="space-y-4">
-        {/* CORE always shows, even if 0 */}
+        {/* BNB always shows, even if 0 */}
         <li
           className="flex justify-between text-text font-semibold cursor-pointer hover:bg-accent/30 rounded-lg px-2 py-1"
           onClick={() => {
             setModalToken({
-              name: "Core",
-              symbol: "CORE",
-              balance: coreBalance,
+              name: "Binance Coin",
+              symbol: "BNB",
+              balance: bnbBalance,
               address: wallet.address,
               decimals: 18,
               isNative: true,
@@ -348,32 +349,32 @@ const TokenList = ({ wallet }) => {
             setShowModal(true);
           }}
         >
-          <span>Core (CORE)</span>
+          <span>Binance Coin (BNB)</span>
           <span>
-            {coreBalance.toFixed(4)}
-            {corePrice > 0
-              ? ` (≈ $${(coreBalance * corePrice).toFixed(2)})`
+            {bnbBalance.toFixed(4)}
+            {bnbPrice > 0
+              ? ` (≈ $${(bnbBalance * bnbPrice).toFixed(2)})`
               : ""}
           </span>
         </li>
 
-        {/* Pulse always shows, even if 0 */}
+        {/* Nova always shows, even if 0 */}
         <li
           className="flex justify-between text-text font-semibold cursor-pointer hover:bg-accent/30 rounded-lg px-2 py-1"
           onClick={() => {
             setModalToken({
-              name: "PulseToken",
-              symbol: "PULSE",
-              balance: pulseBalance,
-              address: TOKEN_ADDRESSES.PULSE,
+              name: "Nova Token",
+              symbol: "NOVA",
+              balance: novaBalance,
+              address: NOVA_CONTRACT_ADDRESS,
               decimals: 18,
             });
             setModalAction("");
             setShowModal(true);
           }}
         >
-          <span>PulseToken (PULSE)</span>
-          <span>{pulseBalance.toFixed(4)}</span>
+          <span>Nova Token (NOVA)</span>
+          <span>{novaBalance.toFixed(4)}</span>
         </li>
 
         {/* Other tokens, only if balance > 0 or custom */}
@@ -577,17 +578,16 @@ const TokenList = ({ wallet }) => {
             <div className="mb-2">
               <span className="font-mono text-xs">
                 <span className="font-bold text-text">Token:</span> {successData.symbol}
-
                 <span className="font-bold text-text">Amount:</span> {successData.amount}
               </span>
             </div>
             <a
-              href={CORESCAN_TX_BASE + successData.hash}
+              href={BSCSCAN_TX_BASE + successData.hash}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-block bg-accent text-primary px-4 py-2 rounded hover:bg-accent-dark mt-4"
             >
-              View on Scan
+              View on BscScan
             </a>
             <div className="mt-4">
               <button

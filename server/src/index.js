@@ -1,9 +1,8 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const walletRoutes = require('./routes/wallet');
-// Add the new CoreDAO proxy route
-const coredaoRoutes = require('./routes/coredao');
+const walletRoutes = require('./routes/bsc-wallet'); // Use BSC/Nova wallet routes
+const bscRoutes = require('./routes/bsc'); // Use BSC proxy routes
 const { connectDB, PORT, MONGO_URI } = require('./config');
 
 const app = express();
@@ -12,8 +11,7 @@ app.use(cors());
 app.use(express.json());
 
 app.use('/api/wallet', walletRoutes);
-// Register the new proxy route
-app.use('/api/coredao', coredaoRoutes);
+app.use('/api/bsc', bscRoutes);
 
 connectDB();
 

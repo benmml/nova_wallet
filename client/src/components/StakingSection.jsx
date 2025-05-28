@@ -1,32 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
-import axios from 'axios';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import {
-  CORE_RPC_URL,
-  PULSE_CONTRACT_ADDRESS,
-  PULSE_ABI,
+  BSC_RPC_URL,
+  NOVA_CONTRACT_ADDRESS,
+  NOVA_ABI,
   TOKEN_ADDRESSES,
 } from '../config';
 
-const CORESTAKE_API_BASE = 'https://openapi.coredao.org/api';
 const ERC20_ABI = [
   'function approve(address spender, uint256 value) external returns (bool)',
   'function allowance(address owner, address spender) external view returns (uint256)',
 ];
-const ZERO_ADDRESS = TOKEN_ADDRESSES.CORE;
+const ZERO_ADDRESS = TOKEN_ADDRESSES.BNB;
 const USDT_ADDRESS = TOKEN_ADDRESSES.USDT;
 const UNLOCK_PERIOD = 30 * 24 * 60 * 60 * 1000; // 30 days in ms
 const CLAIM_PERIOD = 24 * 60 * 60 * 1000; // 24 hours in ms
 
 const StakingSection = ({ wallet }) => {
-  const [coreStaked, setCoreStaked] = useState('0.0000');
+  const [bnbStaked, setBnbStaked] = useState('0.0000');
   const [usdtStaked, setUsdtStaked] = useState('0.0000');
-  const [coreRewards, setCoreRewards] = useState('0.0000');
+  const [bnbRewards, setBnbRewards] = useState('0.0000');
   const [usdtRewards, setUsdtRewards] = useState('0.0000');
   const [stakeAmount, setStakeAmount] = useState('');
-  const [stakeToken, setStakeToken] = useState('CORE');
+  const [stakeToken, setStakeToken] = useState('BNB');
   const [isLoading, setIsLoading] = useState(false);
 
   const [showClaimDialog, setShowClaimDialog] = useState(false);
@@ -37,8 +35,8 @@ const StakingSection = ({ wallet }) => {
   const [unstakeDialogContent, setUnstakeDialogContent] = useState('');
   const [unstakeDialogAction, setUnstakeDialogAction] = useState(null);
 
-  const [lastClaimOrStake, setLastClaimOrStake] = useState({ CORE: null, USDT: null });
-  const [lastClaim, setLastClaim] = useState({ CORE: null, USDT: null });
+  const [lastClaimOrStake, setLastClaimOrStake] = useState({ BNB: null, USDT: null });
+  const [lastClaim, setLastClaim] = useState({ BNB: null, USDT: null });
   const [now, setNow] = useState(Date.now());
 
   // Success modal state
@@ -46,13 +44,6 @@ const StakingSection = ({ wallet }) => {
   const [successData, setSuccessData] = useState({ amount: '', token: '' });
 
   const navigate = useNavigate();
-
-  // Official Core staking (not modified in this snippet)
-  const [coreOfficialStaked, setCoreOfficialStaked] = useState('0.0000');
-  const [coreOfficialRewards, setCoreOfficialRewards] = useState('0.0000');
-  const [coreOfficialValidators, setCoreOfficialValidators] = useState([]);
-  const [coreOfficialClaimHistory, setCoreOfficialClaimHistory] = useState([]);
-  const [coreOfficialLoading, setCoreOfficialLoading] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(() => setNow(Date.now()), 1000);
@@ -62,38 +53,38 @@ const StakingSection = ({ wallet }) => {
   // --- FETCH MY CONTRACT STAKES ---
   const fetchMyStakes = async () => {
     try {
-      const provider = new ethers.JsonRpcProvider(CORE_RPC_URL);
-      const contract = new ethers.Contract(PULSE_CONTRACT_ADDRESS, PULSE_ABI, provider);
+      const provider = new ethers.JsonRpcProvider(BSC_RPC_URL);
+      const contract = new ethers.Contract(NOVA_CONTRACT_ADDRESS, NOVA_ABI, provider);
 
       // Get stake and reward balances
-      const coreStakedWei = await contract.getStake(wallet.address, ZERO_ADDRESS);
+      const bnbStakedWei = await contract.getStake(wallet.address, ZERO_ADDRESS);
       const usdtStakedWei = await contract.getStake(wallet.address, USDT_ADDRESS);
-      const coreRewardsWei = await contract.getStakingRewards(wallet.address, ZERO_ADDRESS);
+      const bnbRewardsWei = await contract.getStakingRewards(wallet.address, ZERO_ADDRESS);
       const usdtRewardsWei = await contract.getStakingRewards(wallet.address, USDT_ADDRESS);
 
-      setCoreStaked(ethers.formatEther(coreStakedWei));
-      setUsdtStaked(ethers.formatUnits(usdtStakedWei, 6));
-      setCoreRewards(ethers.formatEther(coreRewardsWei));
-      setUsdtRewards(ethers.formatUnits(usdtRewardsWei, 6));
+      setBnbStaked(ethers.formatEther(bnbStakedWei));
+      setUsdtStaked(ethers.formatUnits(usdtStakedWei, 18)); // BSC USDT is 18 decimals by default
+      setBnbRewards(ethers.formatEther(bnbRewardsWei));
+      setUsdtRewards(ethers.formatUnits(usdtRewardsWei, 18));
 
-      const coreLast = Number(await contract.stakeTimestampsCore(wallet.address)) * 1000;
+      const bnbLast = Number(await contract.stakeTimestampsCore(wallet.address)) * 1000;
       const usdtLast = Number(await contract.stakeTimestampsUsdt(wallet.address)) * 1000;
 
-      let coreLastClaim = 0, usdtLastClaim = 0;
+      let bnbLastClaim = 0, usdtLastClaim = 0;
       if (contract.getLastClaimTimestamp) {
-        coreLastClaim = Number(await contract.getLastClaimTimestamp(wallet.address, ZERO_ADDRESS)) * 1000;
+        bnbLastClaim = Number(await contract.getLastClaimTimestamp(wallet.address, ZERO_ADDRESS)) * 1000;
         usdtLastClaim = Number(await contract.getLastClaimTimestamp(wallet.address, USDT_ADDRESS)) * 1000;
       }
-      setLastClaimOrStake({ CORE: coreLast, USDT: usdtLast });
-      setLastClaim({ CORE: coreLastClaim, USDT: usdtLastClaim });
+      setLastClaimOrStake({ BNB: bnbLast, USDT: usdtLast });
+      setLastClaim({ BNB: bnbLastClaim, USDT: usdtLastClaim });
     } catch (error) {
       toast.error('Failed to load staking data. Please check your contract address and ABI.');
-      setCoreStaked('0.0000');
+      setBnbStaked('0.0000');
       setUsdtStaked('0.0000');
-      setCoreRewards('0.0000');
+      setBnbRewards('0.0000');
       setUsdtRewards('0.0000');
-      setLastClaimOrStake({ CORE: null, USDT: null });
-      setLastClaim({ CORE: null, USDT: null });
+      setLastClaimOrStake({ BNB: null, USDT: null });
+      setLastClaim({ BNB: null, USDT: null });
     }
   };
 
@@ -116,13 +107,13 @@ const StakingSection = ({ wallet }) => {
     if (isLoading || !stakeAmount || parseFloat(stakeAmount) <= 0) return;
     setIsLoading(true);
     try {
-      const provider = new ethers.JsonRpcProvider(CORE_RPC_URL);
+      const provider = new ethers.JsonRpcProvider(BSC_RPC_URL);
       const signer = new ethers.Wallet(wallet.privateKey, provider);
-      const contract = new ethers.Contract(PULSE_CONTRACT_ADDRESS, PULSE_ABI, signer);
+      const contract = new ethers.Contract(NOVA_CONTRACT_ADDRESS, NOVA_ABI, signer);
 
       const feeData = await provider.getFeeData();
       let tx;
-      if (stakeToken === 'CORE') {
+      if (stakeToken === 'BNB') {
         tx = await contract.stakeCore({
           value: ethers.parseEther(stakeAmount),
           gasLimit: 200000,
@@ -131,10 +122,10 @@ const StakingSection = ({ wallet }) => {
         });
       } else {
         const tokenContract = new ethers.Contract(USDT_ADDRESS, ERC20_ABI, signer);
-        const stakeValue = ethers.parseUnits(stakeAmount, 6);
-        const allowance = await tokenContract.allowance(wallet.address, PULSE_CONTRACT_ADDRESS);
+        const stakeValue = ethers.parseUnits(stakeAmount, 18);
+        const allowance = await tokenContract.allowance(wallet.address, NOVA_CONTRACT_ADDRESS);
         if (allowance < stakeValue) {
-          const approveTx = await tokenContract.approve(PULSE_CONTRACT_ADDRESS, stakeValue);
+          const approveTx = await tokenContract.approve(NOVA_CONTRACT_ADDRESS, stakeValue);
           await approveTx.wait();
         }
         tx = await contract.stakeUsdt(stakeValue, {
@@ -212,10 +203,10 @@ const StakingSection = ({ wallet }) => {
       setShowClaimDialog(false);
       setIsLoading(true);
       try {
-        const provider = new ethers.JsonRpcProvider(CORE_RPC_URL);
+        const provider = new ethers.JsonRpcProvider(BSC_RPC_URL);
         const signer = new ethers.Wallet(wallet.privateKey, provider);
-        const contract = new ethers.Contract(PULSE_CONTRACT_ADDRESS, PULSE_ABI, signer);
-        const tokenAddress = token === 'CORE' ? ZERO_ADDRESS : USDT_ADDRESS;
+        const contract = new ethers.Contract(NOVA_CONTRACT_ADDRESS, NOVA_ABI, signer);
+        const tokenAddress = token === 'BNB' ? ZERO_ADDRESS : USDT_ADDRESS;
         const feeData = await provider.getFeeData();
         const tx = await contract.claimRewards(tokenAddress, {
           gasLimit: 200000,
@@ -267,10 +258,10 @@ const StakingSection = ({ wallet }) => {
       setShowUnstakeDialog(false);
       setIsLoading(true);
       try {
-        const provider = new ethers.JsonRpcProvider(CORE_RPC_URL);
+        const provider = new ethers.JsonRpcProvider(BSC_RPC_URL);
         const signer = new ethers.Wallet(wallet.privateKey, provider);
-        const contract = new ethers.Contract(PULSE_CONTRACT_ADDRESS, PULSE_ABI, signer);
-        const tokenAddress = token === 'CORE' ? ZERO_ADDRESS : USDT_ADDRESS;
+        const contract = new ethers.Contract(NOVA_CONTRACT_ADDRESS, NOVA_ABI, signer);
+        const tokenAddress = token === 'BNB' ? ZERO_ADDRESS : USDT_ADDRESS;
         const tx = await contract.unstake(tokenAddress, {
           gasLimit: 200000,
         });
@@ -316,28 +307,28 @@ const StakingSection = ({ wallet }) => {
       </button>
       <h2 className="text-accent text-2xl font-bold mb-3">Staking</h2>
       <div className="mb-5 bg-yellow-100 border-l-4 border-yellow-500 p-4 rounded text-yellow-900 font-semibold shadow">
-        <span className="text-lg">🚀 Earn <b>1% daily</b> by staking CORE or USDT with us!</span>
+        <span className="text-lg">🚀 Earn <b>1% daily</b> by staking BNB or USDT with us!</span>
         <br />
         <span className="text-sm">All new stakes from this page go to our 1% daily contract.</span>
       </div>
       <div className="mb-8 bg-primary rounded-lg p-4 shadow">
         <h3 className="font-bold text-text text-lg mb-2">Your Stakes (1% Daily Contract)</h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center mb-4">
-          {/* CORE */}
+          {/* BNB */}
           <div>
-            <div className="text-xs text-gray-500">CORE Staked</div>
-            <div className="font-bold">{coreStaked}</div>
+            <div className="text-xs text-gray-500">BNB Staked</div>
+            <div className="font-bold">{bnbStaked}</div>
             <div className="text-xs text-green-700 mt-1">
-              Daily: {dailyReward(coreStaked)} CORE
+              Daily: {dailyReward(bnbStaked)} BNB
             </div>
             <button
               className={buttonClass('red', isLoading)}
               style={{ marginTop: 8 }}
               disabled={isLoading}
-              onClick={() => handleUnstake('CORE', coreStaked, lastClaimOrStake.CORE)}
+              onClick={() => handleUnstake('BNB', bnbStaked, lastClaimOrStake.BNB)}
               type="button"
             >
-              Unstake CORE
+              Unstake BNB
             </button>
           </div>
           {/* USDT */}
@@ -357,26 +348,26 @@ const StakingSection = ({ wallet }) => {
               Unstake USDT
             </button>
           </div>
-          {/* CORE Rewards */}
+          {/* BNB Rewards */}
           <div>
-            <div className="text-xs text-gray-500">CORE Rewards</div>
-            <div className="font-bold">{coreRewards}</div>
+            <div className="text-xs text-gray-500">BNB Rewards</div>
+            <div className="font-bold">{bnbRewards}</div>
             <button
               className={buttonClass('green', isLoading)}
               style={{ marginTop: 8 }}
               disabled={isLoading}
               onClick={() =>
                 handleClaimRewards(
-                  'CORE',
-                  coreStaked,
-                  coreRewards,
-                  lastClaimOrStake.CORE,
-                  lastClaim.CORE
+                  'BNB',
+                  bnbStaked,
+                  bnbRewards,
+                  lastClaimOrStake.BNB,
+                  lastClaim.BNB
                 )
               }
               type="button"
             >
-              Claim CORE Rewards
+              Claim BNB Rewards
             </button>
           </div>
           {/* USDT Rewards */}
@@ -409,7 +400,7 @@ const StakingSection = ({ wallet }) => {
             onChange={(e) => setStakeToken(e.target.value)}
             disabled={isLoading}
           >
-            <option value="CORE">CORE</option>
+            <option value="BNB">BNB</option>
             <option value="USDT">USDT</option>
           </select>
           <input

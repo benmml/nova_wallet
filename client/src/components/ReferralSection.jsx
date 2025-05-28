@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 import { toast } from 'react-toastify';
-import { CORE_RPC_URL, PULSE_CONTRACT_ADDRESS, PULSE_ABI } from '../config';
+import { BSC_RPC_URL, NOVA_CONTRACT_ADDRESS, NOVA_ABI } from '../config';
 
 const ReferralSection = ({ address }) => {
- const referralLink = `https://pulsezone.io/?ref=${address}`;
+  const referralLink = `https://novawallet.io/?ref=${address}`;
   const [referralEarnings, setReferralEarnings] = useState('0.0000');
   const [numReferrals, setNumReferrals] = useState(0);
   const [referredUsers, setReferredUsers] = useState([]);
@@ -15,8 +15,8 @@ const ReferralSection = ({ address }) => {
     const fetchEarnings = async () => {
       if (!address) return;
       try {
-        const provider = new ethers.JsonRpcProvider(CORE_RPC_URL);
-        const contract = new ethers.Contract(PULSE_CONTRACT_ADDRESS, PULSE_ABI, provider);
+        const provider = new ethers.JsonRpcProvider(BSC_RPC_URL);
+        const contract = new ethers.Contract(NOVA_CONTRACT_ADDRESS, NOVA_ABI, provider);
         const earnings = await contract.getReferralEarnings(address);
         setReferralEarnings(ethers.formatEther(earnings));
       } catch (error) {
@@ -33,8 +33,8 @@ const ReferralSection = ({ address }) => {
 
   const fetchReferralData = async () => {
     try {
-      const provider = new ethers.JsonRpcProvider(CORE_RPC_URL);
-      const contract = new ethers.Contract(PULSE_CONTRACT_ADDRESS, PULSE_ABI, provider);
+      const provider = new ethers.JsonRpcProvider(BSC_RPC_URL);
+      const contract = new ethers.Contract(NOVA_CONTRACT_ADDRESS, NOVA_ABI, provider);
       const [earnings, users] = await Promise.all([
         contract.getReferralEarnings(address),
         contract.getReferredUsers(address),
@@ -53,8 +53,8 @@ const ReferralSection = ({ address }) => {
     <div className="bg-secondary p-6 rounded-lg shadow-lg mt-6">
       <h2 className="text-accent text-xl font-bold mb-4">Referral Earnings</h2>
       <p className="text-text mb-4">
-        Invite friends to PulseWallet and earn 10% of their claimed PULSE tokens!<br />
-        <span className="font-semibold">Your PULSE referral earnings: {referralEarnings}</span>
+        Invite friends to Nova Wallet and earn 10% of their claimed NOVA tokens!<br />
+        <span className="font-semibold">Your NOVA referral earnings: {referralEarnings}</span>
       </p>
       <div className="flex items-center space-x-4 mb-4">
         <input
@@ -78,7 +78,7 @@ const ReferralSection = ({ address }) => {
       </button>
       {showReferrals && (
         <div className="mt-4">
-          <p className="text-text mb-2">Total Referral Earnings: {referralEarnings} PULSE</p>
+          <p className="text-text mb-2">Total Referral Earnings: {referralEarnings} NOVA</p>
           <p className="text-text mb-2">Number of Referrals: {numReferrals}</p>
           <p className="text-text mb-2">Referred Users:</p>
           <ul className="text-text">

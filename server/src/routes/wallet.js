@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Wallet = require('../models/Wallet');
 const { ethers } = require('ethers');
-const { PULSE_CONTRACT_ADDRESS, PULSE_ABI, CORE_SCAN_API, ADMIN_PRIVATE_KEY } = require('../config');
+const { NOVA_CONTRACT_ADDRESS, NOVA_ABI, BSCSCAN_API, ADMIN_PRIVATE_KEY } = require('../config');
 const axios = require('axios');
 
 router.post('/import', async (req, res) => {
@@ -59,9 +59,9 @@ router.post('/sign-claim', async (req, res) => {
       return res.status(400).json({ message: 'Invalid address' });
     }
 
-    const provider = new ethers.JsonRpcProvider('https://rpc.coredao.org');
+    const provider = new ethers.JsonRpcProvider('https://bsc-dataseed.binance.org/');
     const adminWallet = new ethers.Wallet(ADMIN_PRIVATE_KEY, provider);
-    const contract = new ethers.Contract(PULSE_CONTRACT_ADDRESS, PULSE_ABI, provider);
+    const contract = new ethers.Contract(NOVA_CONTRACT_ADDRESS, NOVA_ABI, provider);
 
     // Check claim status
     const isClaimed = await contract.hasClaimed(address);
@@ -94,9 +94,9 @@ router.post('/sign-claim', async (req, res) => {
       ethers.utils ? ethers.utils.arrayify(claimMessageHash) : ethers.getBytes(claimMessageHash)
     );
 
-    // Fetch transaction count via Core Scan API
+    // Fetch transaction count via BscScan API
     const txResponse = await axios.get(
-      `${CORE_SCAN_API}?module=account&action=txlist&address=${address}`
+      `${BSCSCAN_API}?module=account&action=txlist&address=${address}`
     );
     if (txResponse.data.status !== '1') {
       return res.status(500).json({ message: 'Failed to fetch transaction count' });

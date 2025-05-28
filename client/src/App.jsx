@@ -61,7 +61,7 @@ const App = () => {
           path="/dashboard"
           element={
             wallet ? (
-              <WalletDashboard />
+              <WalletDashboard wallet={wallet} selectWallet={selectWallet} />
             ) : (
               <Navigate to="/import" />
             )

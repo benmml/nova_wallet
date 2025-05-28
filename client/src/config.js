@@ -1,17 +1,24 @@
+// Nova Wallet - BSC Mainnet Configuration
+
 export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-export const CORE_RPC_URL = import.meta.env.VITE_CORE_RPC_URL || 'https://rpc.coredao.org';
-export const CORE_SCAN_API = 'https://api.scan.coredao.org/api';
-export const PULSE_CONTRACT_ADDRESS = import.meta.env.VITE_PULSE_CONTRACT_ADDRESS || '0x9d0714497318CDE8F285b51f1f896aE88e26a52F';
-export const ADMIN_ADDRESS = import.meta.env.VITE_ADMIN_ADDRESS || '0xD19Ce693E7a8f4cF9C3f8E206bA244C9a4239fAd';
+export const BSC_RPC_URL = import.meta.env.VITE_BSC_RPC_URL || 'https://bsc-dataseed.binance.org/';
+export const BSC_SCAN_API = 'https://api.bscscan.com/api';
+
+// Replace with your deployed BSC smart contract addresses:
+export const NOVA_CONTRACT_ADDRESS = import.meta.env.VITE_NOVA_CONTRACT_ADDRESS || '0xYourNovaContractAddress';
+export const ADMIN_ADDRESS = import.meta.env.VITE_ADMIN_ADDRESS || '0xYourAdminWalletAddress';
+
 export const COINGECKO_API = 'https://api.coingecko.com/api/v3';
+
 export const TOKEN_ADDRESSES = {
-  CORE: '0x0000000000000000000000000000000000000000',
-  WCORE: '0x40375C92d9FAf44d2f9db9Bd9ba41a3317a2404f',
-  USDT: '0xef3A930e1FfFFAcd2fc13434aC81bD278B0ecC8d',
-  PULSE: '0x9d0714497318CDE8F285b51f1f896aE88e26a52F',
+  BNB: '0x0000000000000000000000000000000000000000', // Native coin
+  WBNB: '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c', // Wrapped BNB
+  USDT: '0x55d398326f99059fF775485246999027B3197955', // USDT on BSC
+  NOVA: '0xYourNovaTokenAddress', // Your token if deployed
 };
 
-export const PULSE_ABI = [
+
+export const NOVA_ABI = [
   {
     "inputs": [
       { "internalType": "address", "name": "spender", "type": "address" },

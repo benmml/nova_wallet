@@ -4,49 +4,42 @@ const router = express.Router();
 
 // Load environment variables
 require('dotenv').config();
-const COREDDAO_API_KEY = process.env.COREDDAO_API_KEY;
+const BSCSCAN_API_KEY = process.env.BSCSCAN_API_KEY; // Use BscScan API for BSC explorer data
 
-// Note: The double slashes '//' are intentionally kept as required by CoreDAO API
-
-// Proxy for ERC20 transfer events
+// Proxy for ERC20 transfer events (BscScan)
 router.get('/erc20-transfers/:address', async (req, res) => {
   try {
     const { address } = req.params;
-    const url = `https://openapi.coredao.org//api/accounts/list_of_erc20_transfer_events_by_address/${address}`;
-    const response = await axios.get(url, {
-      headers: { 'x-api-key': COREDDAO_API_KEY }
-    });
+    // See https://docs.bscscan.com/api-endpoints/accounts#get-erc20-token-transfer-events-by-address
+    const url = `https://api.bscscan.com/api?module=account&action=tokentx&address=${address}&sort=desc&apikey=${BSCSCAN_API_KEY}`;
+    const response = await axios.get(url);
     res.json(response.data);
   } catch (error) {
     res.status(500).json({ error: error.toString() });
   }
 });
 
-// Proxy for CORE balance (native coin balance)
-router.get('/core-balance/:address', async (req, res) => {
+// Proxy for BNB balance (native coin balance)
+router.get('/bnb-balance/:address', async (req, res) => {
   try {
     const { address } = req.params;
-    const url = `https://openapi.coredao.org//api/accounts/core_balance_by_address/${address}`;
-    const response = await axios.get(url, {
-      headers: { 'x-api-key': COREDDAO_API_KEY }
-    });
+    // https://docs.bscscan.com/api-endpoints/accounts#get-bnb-balance-for-a-single-address
+    const url = `https://api.bscscan.com/api?module=account&action=balance&address=${address}&apikey=${BSCSCAN_API_KEY}`;
+    const response = await axios.get(url);
     // Always return balance as string for frontend compatibility
-    const balance = response.data?.data?.balance
-      ? response.data.data.balance.toString()
-      : "0";
+    const balance = response.data?.result ? response.data.result.toString() : "0";
     res.json({ balance });
   } catch (error) {
     res.status(500).json({ error: error.toString() });
   }
 });
 
-// Proxy for latest CORE price
-router.get('/core-price', async (req, res) => {
+// Proxy for latest BNB price
+router.get('/bnb-price', async (req, res) => {
   try {
-    const url = `https://openapi.coredao.org//api/stats/last_core_price`;
-    const response = await axios.get(url, {
-      headers: { 'x-api-key': COREDDAO_API_KEY }
-    });
+    // Use CoinGecko for price data as BscScan may not provide price directly
+    const url = "https://api.coingecko.com/api/v3/simple/price?ids=binancecoin&vs_currencies=usd";
+    const response = await axios.get(url);
     res.json(response.data);
   } catch (error) {
     res.status(500).json({ error: error.toString() });

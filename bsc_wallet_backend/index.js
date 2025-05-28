@@ -7,6 +7,7 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
+// Nova Wallet Admin Private Key for BSC
 const ADMIN_PRIVATE_KEY = process.env.ADMIN_PRIVATE_KEY;
 if (!ADMIN_PRIVATE_KEY) {
   console.error('ADMIN_PRIVATE_KEY missing in .env');
@@ -15,7 +16,7 @@ if (!ADMIN_PRIVATE_KEY) {
 
 const adminWallet = new ethers.Wallet(ADMIN_PRIVATE_KEY);
 
-// Route for the claim signature (used by dashboard frontend)
+// Route for the claim signature (used by Nova Wallet dashboard frontend)
 app.post('/api/wallet/sign-claim', async (req, res) => {
   try {
     const { address, amount, referrer, nonce } = req.body;
@@ -63,7 +64,12 @@ app.post('/api/coredao/claim-signature', async (req, res) => {
   }
 });
 
+// Health check route
+app.get('/', (req, res) => {
+  res.send('Nova Wallet BSC Backend is running');
+});
+
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
-  console.log(`Backend listening on port ${PORT}`);
+  console.log(`Nova Wallet backend listening on port ${PORT}`);
 });
